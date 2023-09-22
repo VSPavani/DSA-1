@@ -1,1 +1,15 @@
-
+/*k-selections
+*/
+void generator(int a[],int n,int k,int b[],int index,int start,void *data,void (*process_selection)(int *b,int k,void *data)){
+    if (index==k){
+        process_selection(b,k,data);
+        return;
+    }
+    for (int i = start; i < n; i++) {
+        b[index] = a[i];
+        generator(a, n, k, b, index + 1, i + 1, data, process_selection);
+    }
+}
+void generate_selections(int a[],int n,int k,int b[],void *data,void (*process_selection)(int *b,int k, void *data)){
+    generator(a,n,k,b,0,0,data,process_selection);
+}
