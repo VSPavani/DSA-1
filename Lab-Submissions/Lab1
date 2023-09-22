@@ -2,6 +2,7 @@
 
 #include <string.h> // for testing generate_splits()
 
+// DONE BY VISHVA PARMAR (22110290)
 /*
  * Generate k-selections of a[0..n-1] in lexicographic order and call process_selection to process them.
  *
@@ -26,6 +27,8 @@ void generate_selections(int a[],int n,int k,int b[],void *data,void (*process_s
     generator(a,n,k,b,0,0,data,process_selection);
 }
 
+
+// DONE BY TRIPTI VISHWAKARMA (22110275)
 /*
  * See Exercise 2 (a), page 94 in Jeff Erickson's textbook.
  * The exercise only asks you to count the possible splits.
@@ -72,6 +75,8 @@ void generate_splits(const char *source, const char *dictionary[], int nwords, c
     // Call the helper function to generate splits
     generate_splits_helper(source, dictionary, nwords, buf, 0, 0, data, process_split);
 }
+
+// DONE BY VENKATA SATHYA PAVANI TIRUNAGARI (22110284)
 /*
  * Transform a[] so that it becomes the previous permutation of the elements in it.
  * If a[] is the first permutation, leave it unchanged.
