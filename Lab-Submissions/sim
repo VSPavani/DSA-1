@@ -1,0 +1,324 @@
+#include <stdio.h>
+#include <assert.h>
+#include <stdint.h>
+#include <math.h>
+#include <stdbool.h> // Include the bool type and true/false constants
+
+#include "test.h"
+
+
+enum {
+    NO = 0, /* No line */
+    RED = 1,
+    BLUE = 2
+};
+
+
+/*
+ * The board records the colors of the lines.
+ * board[0] = color of 12
+ * board[1] = color of 13
+ * ...
+ * board[14] = color of 56
+ */
+
+typedef int board_t[15];
+typedef char player_t;
+
+int color(player_t player) {
+    if (player == 'R'||player=='r') {
+        return RED;
+    } else if (player == 'B'||player=='b') {
+        return BLUE;
+    }
+    printf("Your choice is not valid! Choose either R or B.");
+    return 0;
+}
+
+int is_full(board_t board) {
+    for (int i = 0; i <= 14; i++) {
+        if (board[i] == NO) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+typedef struct {
+    int line; /* 0 for 12, 1 for 13, ..., 14 for 56. */
+    int score; /* -1 for loss, 0 for draw, 1 for win. */
+} move_t;
+
+int decoder[14348908];
+
+int encode(board_t board) {
+    int b = 0;
+    for (int i = 0; i < 15; i++) {
+        b += (board[i]) * pow(3, (14 - i));
+    }
+    return b;
+}
+
+void decode(int n, board_t answer) {
+    int index = 14;
+    while (index != -1) {
+        answer[index] = n % 3;
+        n = n / 3;
+        index--;
+    }
+}
+
+player_t other_player(player_t player) {
+    switch (player) {
+        case 'R':
+            return 'B';
+        case 'B':
+            return 'R';
+    }
+}
+
+int has_won(board_t board, player_t player) {
+    player_t other = other_player(player);
+    int num = color(other);
+
+    for (int i = 0; i < 14; i++) {
+        for (int j = i + 1; j < 15; j++) {
+            if (i == 0) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 4 && board[4 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 1) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 4 && board[7 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 2) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 4 && board[9 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 3) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 4 && board[10 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 5) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 8 && board[3 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 6) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 8 && board[5 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 7) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 8 && board[6 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 9) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 11 && board[2 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 10) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 11 && board[3 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+            if (i == 12) {
+                if (board[i] == num && board[j] == num) {
+                    if (j <= 13 && board[1 + j] == num) {
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+void print_board(board_t board) {
+    for (int i = 0; i < 15; ++i) {
+        switch (board[i]) {
+            case NO:
+                printf(".   ");
+                break;
+            case RED:
+                printf("R   ");
+                break;
+            case BLUE:
+                printf("B   ");
+                break;
+        }
+    }
+    printf("\n");
+    if (has_won(board, 'R')) {
+        printf("Red player has won!\n");
+    } else if (has_won(board, 'B')) {
+        printf("Blue player has won!\n");
+    }
+}
+
+player_t turn(board_t board) {
+    int reds = 0, blues = 0;
+    player_t response;
+    for (int i = 0; i < 15; i++) {
+        if (board[i] == RED) {
+            reds++;
+        }
+        if (board[i] == BLUE) {
+            blues++;
+        }
+    }
+    if (blues >= reds) {
+        response = 'R';
+    } else if (reds > blues) {
+        response = 'B';
+    }
+    return response;
+}
+
+int is_empty(board_t board, int position) {
+    // Check if the specified position on the board is empty
+    return board[position] == NO;
+}
+
+int best_move(board_t board) {
+    if ((!is_full(board)) && (!has_won(board, 'B')) && (!has_won(board, 'R'))){
+
+        int maxlose = 0;
+        int required = -1;
+        player_t play = turn(board);
+        for (int k = 0; k < 15; k++) {
+            if (board[k] == NO) {
+                board[k] = color(play);
+                if (!has_won(board, other_player(play))) {
+                    required = k;
+                }
+                board[k] = NO;
+            }
+        }
+        for (int i = 0; i < 15; i++) {
+            if (board[i] == NO) {
+                board[i] = color(play);
+                if (!has_won(board, other_player(play))) {
+                    int zeros = 0, losing = 0;
+                    for (int j = 0; j < 15; j++) {
+                        if (board[j] == NO) {
+                            zeros++;
+                            board[j] = color(other_player(play));
+                            if (has_won(board, play)) {
+                                losing++;
+                            }
+                            board[j] = NO;
+                        }
+                    }
+                    board[i] = NO;
+                    if (zeros == losing) {
+                        required = i;
+                        break;
+                    } else if (losing > maxlose && losing) {
+                        maxlose = losing;
+                        required = i;
+                    }
+                }
+                board[i] = NO;
+            }
+        }
+
+        if (required == -1) {
+        printf("You Won : ");
+        } else {
+            decoder[encode(board)] = required;
+            return required;
+        }
+    }
+
+}
+
+int main() {
+    board_t board;
+    player_t player;
+    int values[15] = {12, 13, 14, 15, 16, 23, 24, 25, 26, 34, 35, 36, 45, 46, 56};
+
+    for (int i = 0; i < 15; ++i) {
+        board[i] = NO;
+    }
+
+    printf("Which Colour would you like to choose?\n Red(R)  : Player 1 (plays first)\n Blue(B) : Player 2 (plays after red)\n Enter your choice (R/B): ");
+    scanf(" %c", &player);
+
+    int value;
+    if (player=='R'||player=='r'||player=='B'||player=='b'){
+        printf("The possible lines are:\n 0  : Join 1 and 2 (12)\n 1  : Join 1 and 3 (13)\n 2  : Join 1 and 4 (14)\n 3  : Join 1 and 5 (15)\n 4  : Join 1 and 6 (16)\n 5  : Join 2 and 3 (23)\n 6  : Join 2 and 4 (24)\n 7  : Join 2 and 5 (25)\n 8  : Join 2 and 6 (26)\n 9  : Join 3 and 4 (34)\n 10 : Join 3 and 5 (35)\n 11 : Join 3 and 6 (36)\n 12 : Join 4 and 5 (45)\n 13 : Join 4 and 6 (46)\n 14 : Join 5 and 6 (56)\n");  
+    }
+
+    if (player == 'B'||player=='b') {
+        int move = best_move(board);
+        board[move] = RED;
+        printf("Computer's move is %d\n", values[move]);
+        print_board(board);
+    }
+    
+    while ((player=='R'||player=='r'||player=='B'||player=='b')&&(!has_won(board, 'R') && !has_won(board, 'B') && !is_full(board))) {
+        // Prompt the user for their move
+        printf("Enter your move (0-14): ");
+        scanf("%d", &value);
+
+        if (value < 0 || value > 14 || board[value] != NO) {
+            printf("Invalid move. Please choose an unoccupied position.\n");
+            continue; // Continue the loop without making a move
+        }
+
+        board[value] = color(player);
+        printf("Your Move is %d\n", values[value]);
+        print_board(board);
+
+        if (has_won(board, player)) {
+            break;
+        }
+
+        // Check for a draw after the user's move
+        if (is_full(board)) {
+            printf("The game is a draw!\n");
+            break;
+        }
+
+        int move = best_move(board);
+        if (move != -1) {
+            board[move] = color(turn(board));
+            printf("Computer's move is %d\n", values[move]);
+            print_board(board);
+
+            if (has_won(board, turn(board))) {
+                break;
+            }
+        } else {
+            printf("The computer couldn't find a move, it's a draw!\n");
+            break;
+        }
+    }
+
+    return 0;
+}
