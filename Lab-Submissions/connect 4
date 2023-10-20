@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <limits.h>
+#include <stdlib.h> // Add this for srand and rand
 
 enum {
     EMPTY = 0,
@@ -10,8 +11,10 @@ enum {
 typedef char board_t[4][5];
 typedef char player_t;
 
-int has_won(board_t board, player_t player)
-{
+// Define userColor and aiColor as global variables
+player_t userColor, aiColor;
+
+int has_won(board_t board, player_t player) {
     char target;
     if (player == RED)
         target = 'R';
@@ -57,8 +60,7 @@ int has_won(board_t board, player_t player)
     return 0;
 }
 
-int is_full(board_t board)
-{
+int is_full(board_t board) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 5; j++) {
             if (board[i][j] == '*') {
@@ -81,10 +83,10 @@ int drop_piece(board_t board, int col, player_t player) {
         row--;
 
     if (row >= 0) {
-        if (player == RED)
-            board[row][col] = 'R';
+        if (player == userColor)
+            board[row][col] = (userColor == RED) ? 'R' : 'B';
         else
-            board[row][col] = 'B';
+            board[row][col] = (aiColor == RED) ? 'R' : 'B';
         return row;  // Return the row where the piece was placed
     } else {
         printf("Column %d is already full. Please choose another column.\n", col);
@@ -92,59 +94,46 @@ int drop_piece(board_t board, int col, player_t player) {
     }
 }
 
-move_t best_move(board_t board, player_t player, int depth, int alpha, int beta)
-{
+move_t best_move(board_t board, player_t player, int depth, int alpha, int beta) {
     move_t res;
-    move_t AIresponse = {.col = -1, .score = (player == BLUE) ? INT_MIN : INT_MAX};
+    move_t AIresponse = {.col = -1, .score = (player == aiColor) ? INT_MIN : INT_MAX};
 
-    if (has_won(board, RED))
-    {
+    if (has_won(board, userColor)) {
         AIresponse.score = -10;
         return AIresponse;
     }
-    if (has_won(board, BLUE))
-    {
+    if (has_won(board, aiColor)) {
         AIresponse.score = 10;
         return AIresponse;
     }
 
-    if (is_full(board) || depth == 0)
-    {
+    if (is_full(board) || depth == 0) {
         AIresponse.score = 0;
         return AIresponse;
     }
 
-    for (int col = 0; col < 5; ++col)
-    {
-        if (board[0][col] == '*')
-        {
+    for (int col = 0; col < 5; ++col) {
+        if (board[0][col] == '*') {
             int row = drop_piece(board, col, player);
-            if (row != -1)
-            {
-                res = best_move(board, (player == BLUE) ? RED : BLUE, depth - 1, alpha, beta);
+            if (row != -1) {
+                res = best_move(board, (player == aiColor) ? userColor : aiColor, depth - 1, alpha, beta);
                 board[row][col] = '*';
 
-                if (player == BLUE)
-                {
-                    if (res.score > AIresponse.score)
-                    {
+                if (player == aiColor) {
+                    if (res.score > AIresponse.score) {
                         AIresponse.col = col;
                         AIresponse.score = res.score;
                     }
                     alpha = (alpha > res.score) ? alpha : res.score;
-                }
-                else // player == RED
-                {
-                    if (res.score < AIresponse.score)
-                    {
+                } else {
+                    if (res.score < AIresponse.score) {
                         AIresponse.col = col;
                         AIresponse.score = res.score;
                     }
                     beta = (beta < res.score) ? beta : res.score;
                 }
 
-                if (beta <= alpha)
-                {
+                if (beta <= alpha) {
                     break; // Alpha-beta pruning
                 }
             }
@@ -154,8 +143,7 @@ move_t best_move(board_t board, player_t player, int depth, int alpha, int beta)
     return AIresponse;
 }
 
-void print_board(board_t board)
-{
+void print_board(board_t board) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 5; j++) {
             printf("%c", board[i][j]);
@@ -172,10 +160,7 @@ void initialize_board(board_t board) {
     }
 }
 
-int main()
-{
-    /* Your game play logic. */
-    /* The user should have the option to select red or blue player. */
+int main() {
     board_t board;
     initialize_board(board);
 
@@ -187,29 +172,31 @@ int main()
     printf("Enter your choice (1 or 2): ");
     scanf("%d", &userColorChoice);
 
-    player_t userColor;
     if (userColorChoice == 1) {
         userColor = RED;
-        printf("You've selected Red (R).\n");
+        aiColor = BLUE;
+        printf("You've selected Red (R). AI is Blue (B).\n");
     } else if (userColorChoice == 2) {
         userColor = BLUE;
-        printf("You've selected Blue (B).\n");
+        aiColor = RED;
+        printf("You've selected Blue (B). AI is Red (R).\n");
     } else {
-        printf("Invalid choice. Defaulting to Red (R).\n");
+        printf("Invalid choice. Defaulting to Red (R). AI is Blue (B).\n");
         userColor = RED;
+        aiColor = BLUE;
     }
 
     player_t currentPlayer = userColor;
 
     printf("Connect Four Game\n");
-    printf("RED is the user, BLUE is the AI.\n");
+    printf("You are %s, AI is %s.\n", (userColor == RED) ? "RED" : "BLUE", (aiColor == RED) ? "RED" : "BLUE");
     printf("Empty space is denoted by '*'.\n\n");
 
     while (1) {
         print_board(board);
 
-        if (currentPlayer == RED) {
-            printf("\nUser's turn (RED)\n");
+        if (currentPlayer == userColor) {
+            printf("\nUser's turn \n");
             int col;
             printf("Enter column (0-4) to place your piece: ");
             scanf("%d", &col);
@@ -221,34 +208,34 @@ int main()
             }
 
             // Place user's piece
-            drop_piece(board, col, RED);
+            drop_piece(board, col, userColor);
 
             // Check if the user has won
-            if (has_won(board, RED)) {
+            if (has_won(board, userColor)) {
                 print_board(board);
-                printf("Congratulations! User (RED) wins!\n");
+                printf("Congratulations! User wins!\n");
                 break;
             }
 
-            currentPlayer = BLUE;
+            currentPlayer = aiColor;
         } else {
-            printf("\nAI's turn (BLUE)\n");
+            printf("\nAI's turn \n");
 
             // AI selects the best move using minimax
-            move_t bestMove = best_move(board, BLUE,10,INT_MIN, INT_MAX);
+            move_t bestMove = best_move(board, aiColor, 10, INT_MIN, INT_MAX);
             printf("AI selects column %d.\n", bestMove.col);
 
             // Place AI's piece
-            drop_piece(board, bestMove.col, BLUE);
+            drop_piece(board, bestMove.col, aiColor);
 
             // Check if the AI has won
-            if (has_won(board, BLUE)) {
+            if (has_won(board, aiColor)) {
                 print_board(board);
-                printf("AI (BLUE) wins! \n");
+                printf("AI wins! \n");
                 break;
             }
 
-            currentPlayer = RED;
+            currentPlayer = userColor;
         }
 
         // Check if the board is full (tie)
